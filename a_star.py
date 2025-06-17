@@ -8,6 +8,8 @@ class GridNode:
         self.x = new_x
         self.y = new_y
     def __eq__(self, other):
+        if other is None:
+            return False
         return self.x==other.x and self.y==other.y
     # Прописано, для использования PriorityQueue
     def __lt__(self, other):
@@ -82,3 +84,47 @@ def a_star(start: GridNode, finish: GridNode, graph: list[list[bool]]) -> list[G
     path.append(curr)
 
     return path[::-1]
+
+def a_star_visualiser(start: GridNode, finish: GridNode, graph: list[list[bool]]) -> list:
+    if start==finish:
+        raise ValueError('start and finish should be different Nodes')
+    width = len(graph[0])
+    height = len(graph)
+
+    frontier = PriorityQueue()
+    came_from = [[None]*width for x in range(height)]
+    cost = [[float('inf')]*width for x in range(height)]
+
+    frontier.put([0, start])
+    cost[start.y][start.x] = 0
+
+    while not frontier.empty():
+        curr = frontier.get()[1]
+        if  curr == finish:
+            break
+        near = find_neighbours(curr, width, height)
+        for n in near:
+            # проверка на стену
+            if not graph[n.y][n.x]:
+                continue
+            # если не стена, то делаем по обычному
+            n_cost = cost[curr.y][curr.x]+1
+            if n_cost<cost[n.y][n.x]:
+                cost[n.y][n.x] = n_cost
+                came_from[n.y][n.x] = curr
+                priority = n_cost+man_heuristic(n, finish)
+                frontier.put([priority, n])
+
+    # проверка: достигли ли конечную вершину
+    if came_from[finish.y][finish.x] is None:
+        return []
+
+    # составляем путь
+    curr = finish
+    path = []
+    while curr!=start:
+        path.append(curr)
+        curr = came_from[curr.y][curr.x]
+    path.append(curr)
+
+    return [path[::-1], came_from]
